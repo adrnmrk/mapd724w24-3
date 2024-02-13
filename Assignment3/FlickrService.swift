@@ -9,7 +9,7 @@ import Foundation
 import Combine
 
 struct FlickrService {
-    static let apiKey = "REPLACE_WITH_API_KEY"
+    static let apiKey = "a6d819499131071f158fd740860a5a88"
     static let baseURL = URL(string: "https://api.flickr.com/services/rest/")!
     // ^ rare case where force unwrapping is acceptable,
     // since we are providing the whole string literal, it must be a valid URL

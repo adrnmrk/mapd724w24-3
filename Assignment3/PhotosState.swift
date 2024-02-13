@@ -14,8 +14,8 @@ class PhotosState: ObservableObject {
     @Published var photos: [FlickrService.Photo] = []
 
     @Published var photoData: [FlickrService.Photo.ID: Data] = [:]
-
-    init(maxPhotos: Int = 5) {
+//changed to 6
+    init(maxPhotos: Int = 6) {
         FlickrService
             .getList()
             .receive(on: RunLoop.main)

@@ -12,14 +12,11 @@ struct ImageBrowser: View {
     @State var index = 0 // the current photo index in the array of photos
 
     @State var scale: CGFloat = 1
-    @GestureState var angle: Angle = .zero
+    @GestureState private var gestureRotation = Angle.zero
+    @State private var rotationAngle: Angle = .zero
 
     let dialRadius: CGFloat = 50
     @State var dialAngle: Angle = .zero
-
-    @Environment(\.displayScale) var displayScale
-    // device screen pixel scale (1,2 or 3), needed when displaying a pure CGImage
-    // different from scale above used by tap gesture
 
     var photo: (FlickrService.Photo, data: Data)? {
         guard index < state.photos.count else {
@@ -36,15 +33,39 @@ struct ImageBrowser: View {
     var body: some View {
         VStack {
             Spacer()
-            if let photo {
-                (Image(data: photo.data, scale: displayScale) ?? Image(systemName: "photo"))
+            if let photo = photo {
+                Image(uiImage: (UIImage(data: photo.data) ?? UIImage(systemName: "photo"))!)
                     .resizable()
                     .scaledToFit()
-                // TODO: add the gestures (tap, double tap and rotate)
+                    .scaleEffect(scale)
+                    .rotationEffect(rotationAngle + gestureRotation)
+                    .gesture(
+                        TapGesture(count: 1)
+                            .onEnded { _ in
+                                scale = scale == 1 ? 1.5 : 1
+                            }
+                            .simultaneously(with:
+                                TapGesture(count: 2)
+                                    .onEnded { _ in
+                                        scale = 1
+                                    }
+                            )
+                    )
+            } else {
+                Text("No photo available")
             }
             Spacer()
         }
-        // TODO: add gesture (swipe left-right gesture)
+        .gesture(
+            DragGesture()
+                .onEnded { value in
+                    let change = value.translation.width / 10 // Adjust the sensitivity
+                    withAnimation {
+                        // Handle swipe gesture here
+                        index = (index + Int(change) + state.photos.count) % state.photos.count
+                    }
+                }
+        )
         .overlay(alignment: .bottomLeading) {
             Circle()
                 .foregroundStyle(.pink)
@@ -57,15 +78,25 @@ struct ImageBrowser: View {
                 .rotationEffect(dialAngle)
                 .opacity(state.photos.count > 1 ? 1 : 0) // hide if <1 photo
                 .padding()
-                // TODO: add gesture (to turn the dial and update the index)
+                .gesture(
+                    RotationGesture()
+                        .onChanged { value in
+                            // Update rotationAngle directly
+                            rotationAngle += value
+                        }
+                        .onEnded { _ in
+                            // Reset rotationAngle when the gesture ends
+                            rotationAngle = .zero
+                        }
+                )
         }
     }
-
-    // you may need this
-    func normalizeRadians(angle: CGFloat) -> CGFloat {
-        let positiveAngle = angle < 0 ? angle + .pi*2 : angle
-        return positiveAngle.truncatingRemainder(dividingBy: .pi*2)
-    }
+   
+//    // you may need this
+//    func normalizeRadians(angle: CGFloat) -> CGFloat {
+//        let positiveAngle = angle < 0 ? angle + .pi*2 : angle
+//        return positiveAngle.truncatingRemainder(dividingBy: .pi*2)
+//    }
 }
 
 #Preview {
