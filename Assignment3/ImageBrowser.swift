@@ -37,6 +37,7 @@ struct ImageBrowser: View {
                 ContentView(photo: photo.0) // Pass the photo object to ContentView
                     .scaleEffect(scale)
                     .rotationEffect(rotationAngle + gestureRotation)
+                    .id(photo.0.id) // Ensure ContentView updates when photo changes
                     .gesture(
                         TapGesture(count: 1)
                             .onEnded { _ in
@@ -49,28 +50,24 @@ struct ImageBrowser: View {
                                     }
                             )
                     )
+                    .gesture(
+                        DragGesture()
+                            .onEnded { gesture in
+                                let swipeThreshold: CGFloat = 100
+                                if gesture.translation.width > swipeThreshold {
+                                    // Swiped right, show the next image
+                                    index = (index + 1) % state.photos.count
+                                } else if gesture.translation.width < -swipeThreshold {
+                                    // Swiped left, show the previous image
+                                    index = index == 0 ? state.photos.count - 1 : index - 1
+                                }
+                            }
+                    )
             } else {
                 Text("No photo available")
             }
             Spacer()
         }
-        .gesture(
-            DragGesture()
-                .onEnded { value in
-                    let change = value.translation.width
-                    let newIndex = (index + (change > 0 ? -1 : 1) + state.photos.count) % state.photos.count
-                    withAnimation {
-                        index = newIndex
-                    }
-                }
-        )
-        .gesture(
-            RotationGesture()
-                .updating($gestureRotation) { value, gestureState, _ in
-                    dialAngle = value
-                    gestureState = .zero // Reset the rotation state after gesture ends
-                }
-        )
         .overlay(alignment: .bottomLeading) {
             Circle()
                 .foregroundStyle(.pink)
@@ -85,30 +82,4 @@ struct ImageBrowser: View {
                 .padding()
         }
     }
-
-    
-    // you may need this
-      func normalizeRadians(angle: CGFloat) -> CGFloat {
-          let positiveAngle = angle < 0 ? angle + .pi*2 : angle
-          return positiveAngle.truncatingRemainder(dividingBy: .pi*2)
-      }
-    
-    
-    
-    // SwiftUI Image does not have an initializer from Data. UIImage does, so we created a SwiftUI Image by creating a UIImage first, which is probably fine for just a class assignment, but I still don't like it.
-    // Use this instead.
-    // NOTE: when making extensions to system-wide types like Image,
-    // keep your modifications private to the file to avoid conflicts
-    // especially if you are doing so in a shared library
-    
-    //fileprivate extension Image {
-    //    init?(data: Data, scale: CGFloat) {
-    //        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
-    //              let cgImage = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
-    //            return nil
-    //        }
-    //        self = Image(decorative: cgImage, scale: scale)
-    //    }
-    //}
 }
-
