@@ -9,14 +9,14 @@ import SwiftUI
 
 struct ImageBrowser: View {
     @StateObject var state = PhotosState()
-    @State var index = 0 // the current photo index in the array of photos
+    @State private var index = 0 // the current photo index in the array of photos
     
-    @State var scale: CGFloat = 1
+    @State private var scale: CGFloat = 1
     @GestureState private var gestureRotation = Angle.zero
     @State private var rotationAngle: Angle = .zero
     
     let dialRadius: CGFloat = 50
-    @State var dialAngle: Angle = .zero
+    @State private var dialAngle: Angle = .zero
     
     var photo: (FlickrService.Photo, data: Data)? {
         guard index < state.photos.count else {
@@ -35,7 +35,6 @@ struct ImageBrowser: View {
             Spacer()
             if let photo = photo {
                 ContentView(photo: photo.0) // Pass the photo object to ContentView
-                    .frame(width: 200, height: 200) // Adjust size as needed
                     .scaleEffect(scale)
                     .rotationEffect(rotationAngle + gestureRotation)
                     .gesture(
@@ -44,11 +43,11 @@ struct ImageBrowser: View {
                                 scale = scale == 1 ? 1.5 : 1
                             }
                             .simultaneously(with:
-                                                TapGesture(count: 2)
-                                .onEnded { _ in
-                                    scale = 1
-                                }
-                                           )
+                                TapGesture(count: 2)
+                                    .onEnded { _ in
+                                        scale = 1
+                                    }
+                            )
                     )
             } else {
                 Text("No photo available")
@@ -58,52 +57,41 @@ struct ImageBrowser: View {
         .gesture(
             DragGesture()
                 .onEnded { value in
-                    let change = value.translation.width / 10 // Adjust the sensitivity
+                    let change = value.translation.width
+                    let newIndex = (index + (change > 0 ? -1 : 1) + state.photos.count) % state.photos.count
                     withAnimation {
-                        // Handle swipe gesture here
-                        // Calculate the new index
-                                       var newIndex = index + Int(change)
-                                       
-                                       // Ensure the index stays within bounds
-                                       if newIndex < 0 {
-                                           newIndex = 0
-                                       } else if newIndex >= state.photos.count {
-                                           newIndex = state.photos.count - 1
-                                       }
-                                       
-                                       // Update the index
-                                       index = newIndex
+                        index = newIndex
                     }
                 }
         )
-        .overlay(alignment: .bottomLeading) {
-                    Circle()
-                        .foregroundStyle(.pink)
-                        .frame(width: dialRadius*2, height: dialRadius*2)
-                        .overlay(alignment: .top) {
-                            Capsule()
-                                .frame(width: dialRadius/6, height: dialRadius/2)
-                                .padding(dialRadius/10)
-                        }
-                        .rotationEffect(dialAngle)
-                        .opacity(state.photos.count > 1 ? 1 : 0) // hide if <1 photo
-                        .padding()
-                        .gesture(
-                            RotationGesture()
-                                .onChanged { value in
-                                    // Update dialAngle directly
-                                    dialAngle = value
-                                    
-                                    // Calculate the index based on the rotation angle
-                                    let indexIncrement = Double(state.photos.count) * Double(value.radians) / (2 * .pi)
-                                    index = max(0, min(state.photos.count - 1, Int(indexIncrement)))
-                                }
-                        )
+        .gesture(
+            RotationGesture()
+                .updating($gestureRotation) { value, gestureState, _ in
+                    dialAngle = value
+                    gestureState = .zero // Reset the rotation state after gesture ends
                 }
-            }
-        
+        )
+        .overlay(alignment: .bottomLeading) {
+            Circle()
+                .foregroundStyle(.pink)
+                .frame(width: dialRadius*2, height: dialRadius*2)
+                .overlay(alignment: .top) {
+                    Capsule()
+                        .frame(width: dialRadius/6, height: dialRadius/2)
+                        .padding(dialRadius/10)
+                }
+                .rotationEffect(dialAngle)
+                .opacity(state.photos.count > 1 ? 1 : 0) // hide if <1 photo
+                .padding()
+        }
+    }
+
     
-    //    // you may ne
+    // you may need this
+      func normalizeRadians(angle: CGFloat) -> CGFloat {
+          let positiveAngle = angle < 0 ? angle + .pi*2 : angle
+          return positiveAngle.truncatingRemainder(dividingBy: .pi*2)
+      }
     
     
     

@@ -47,7 +47,7 @@ struct ContentView: View {
 
     var body: some View {
         ImageView(photo: photo)
-            .frame(width: 200, height: 200) // Adjust size as needed
+            .scaledToFit()
     }
 }
 
