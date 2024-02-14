@@ -7,33 +7,48 @@
 
 import SwiftUI
 
-struct ContentView: View {
-    @StateObject var state = PhotosState()
+struct ImageView: View {
+    @State private var downloadedImage: UIImage? // Store the downloaded image
+
+    let photo: FlickrService.Photo // Photo object containing URL
 
     var body: some View {
-        List(state.photos) { photo in
-            ImageView(photo: photo, photoData: state.photoData[photo.id, default: Data()])
+        if let image = downloadedImage {
+            // If the image has been downloaded, display it
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFit()
+        } else {
+            // If the image has not been downloaded yet, show a placeholder
+            ProgressView() // You can use any placeholder view here
+                .onAppear(perform: downloadImage) // Trigger image download when the view appears
         }
     }
-}
 
-struct ImageView: View {
-    let photo: FlickrService.Photo
-    let photoData: Data
-
-    var body: some View {
-        Image(uiImage: UIImage(data: photoData) ?? UIImage())
-            .resizable()
-            .aspectRatio(1, contentMode: .fill)
-            .overlay(alignment: .topLeading) {
-                Text(photo.title)
-                    .padding()
-                    .background(Material.regular, in: RoundedRectangle(cornerRadius: 10))
-                    .padding()
+    private func downloadImage() {
+        // Use the URL property of the Photo object to download the image data asynchronously
+        URLSession.shared.dataTask(with: photo.url) { data, response, error in
+            if let data = data, let image = UIImage(data: data) {
+                // If image data is downloaded successfully, update the downloadedImage state
+                DispatchQueue.main.async {
+                    self.downloadedImage = image
+                }
+            } else {
+                // Handle any errors that occur during image download
+                print("Error downloading image:", error?.localizedDescription ?? "Unknown error")
             }
+        }.resume() // Start the URLSession task
     }
 }
 
-#Preview {
-    ContentView()
+// Example usage in ContentView
+struct ContentView: View {
+    let photo: FlickrService.Photo // Example Photo object
+
+    var body: some View {
+        ImageView(photo: photo)
+            .frame(width: 200, height: 200) // Adjust size as needed
+    }
 }
+
+

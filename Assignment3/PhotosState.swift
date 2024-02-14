@@ -25,9 +25,9 @@ class PhotosState: ObservableObject {
                         print("Network Error. \(error.localizedDescription)")
                     case .finished:
                         print("Network Request Finished.")
-                        print("Downloading Photo Data")
                         for photo in self.photos {
                             self.downloadPhotoData(photo: photo)
+                            print("Downloading Photo Data: \(photo)")
                         }
                 }
             } receiveValue: { photos in
