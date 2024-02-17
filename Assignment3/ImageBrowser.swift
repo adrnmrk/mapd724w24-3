@@ -99,9 +99,9 @@ struct ImageBrowser: View {
                 .position(x: dialRadius + 20, y: UIScreen.main.bounds.height - dialRadius - 100)
                 .gesture(
                     DragGesture()
-                        .onEnded { value in
-                            let startAngle = atan2(value.startLocation.y - dialRadius, value.startLocation.x - dialRadius)
-                            let endAngle = atan2(value.location.y - dialRadius, value.location.x - dialRadius)
+                        .onEnded{ value in
+                            let startAngle = atan2(value.startLocation.x - dialRadius, value.startLocation.y - dialRadius)
+                            let endAngle = atan2(value.location.x - dialRadius, value.location.y - dialRadius)
                             let diffAngle = endAngle - startAngle
                             
                             if diffAngle > 0 {
@@ -119,7 +119,7 @@ struct ImageBrowser: View {
                             }
                         }
                 )
-
+            
             
         }
     }
