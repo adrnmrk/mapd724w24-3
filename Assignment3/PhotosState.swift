@@ -11,20 +11,22 @@ import Combine
 class PhotosState: ObservableObject {
     private var cancellables: Set<AnyCancellable> = []
 
-    @Published var photos: [FlickrService.Photo] = []
+    @Published var photos: [FlickrService.Photo] = [] //array of pics
 
-    @Published var photoData: [FlickrService.Photo.ID: Data] = [:]
+    @Published var photoData: [FlickrService.Photo.ID: Data] = [:] //photo data
 //changed to 6
     init(maxPhotos: Int = 6) {
+        //init photostate object
         FlickrService
             .getList()
-            .receive(on: RunLoop.main)
+            .receive(on: RunLoop.main) //receive values mon main thread
             .sink { completion in
                 switch completion {
                     case .failure(let error):
                         print("Network Error. \(error.localizedDescription)")
                     case .finished:
                         print("Network Request Finished.")
+                    //for each photo, download the data
                         for photo in self.photos {
                             self.downloadPhotoData(photo: photo)
                             print("Downloading Photo Data: \(photo)")

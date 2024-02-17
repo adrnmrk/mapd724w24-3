@@ -9,9 +9,9 @@ import SwiftUI
 
 struct ImageView: View {
     @State private var downloadedImage: UIImage? // Store the downloaded image
-
+    
     let photo: FlickrService.Photo // Photo object containing URL
-
+    
     var body: some View {
         if let image = downloadedImage {
             // If the image has been downloaded, display it
@@ -24,7 +24,7 @@ struct ImageView: View {
                 .onAppear(perform: downloadImage) // Trigger image download when the view appears
         }
     }
-
+    
     private func downloadImage() {
         // Use the URL property of the Photo object to download the image data asynchronously
         URLSession.shared.dataTask(with: photo.url) { data, response, error in
@@ -44,10 +44,15 @@ struct ImageView: View {
 // Example usage in ContentView
 struct ContentView: View {
     let photo: FlickrService.Photo // Example Photo object
-
+    let authorName: String // Author's name
     var body: some View {
-        ImageView(photo: photo)
-            .scaledToFit()
+        Text(authorName)
+            .padding(5)
+            .background(Color.black.opacity(0.5))
+            .foregroundColor(.white)
+            .clipShape(RoundedRectangle(cornerRadius: 5))
+        ImageView(photo: photo).scaledToFit()
+
     }
 }
 

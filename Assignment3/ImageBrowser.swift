@@ -34,19 +34,22 @@ struct ImageBrowser: View {
         VStack {
             Spacer()
             if let photo = photo {
-                ContentView(photo: photo.0) // Pass the photo object to ContentView
+                let authorName = photo.0.owner
+                ContentView(photo: photo.0, authorName: authorName) // Pass the photo object and owner to ContentView
+                    .id(photo.0.id) // Ensure ContentView updates when photo changes
                     .scaleEffect(scale)
                     .rotationEffect(rotationAngle + gestureRotation)
-                    .id(photo.0.id) // Ensure ContentView updates when photo changes
                     .gesture(
-                        TapGesture(count: 1)
+                        TapGesture(count: 2)
                             .onEnded { _ in
-                                scale = scale == 1 ? 1.5 : 1
+                                // Double tap recognized, reset scale to 1
+                                scale = 1
                             }
-                            .simultaneously(with:
-                                TapGesture(count: 2)
+                            .exclusively(before:
+                                TapGesture(count: 1)
                                     .onEnded { _ in
-                                        scale = 1
+                                        // Single tap recognized, zoom in
+                                        scale *= 1.5
                                     }
                             )
                     )
@@ -63,6 +66,11 @@ struct ImageBrowser: View {
                                 }
                             }
                     )
+                    .gesture(
+                        RotationGesture()
+                            .onChanged { angle in
+                                rotationAngle = angle
+                            })
             } else {
                 Text("No photo available")
             }
@@ -80,6 +88,22 @@ struct ImageBrowser: View {
                 .rotationEffect(dialAngle)
                 .opacity(state.photos.count > 1 ? 1 : 0) // hide if <1 photo
                 .padding()
+                .gesture(
+                    RotationGesture()
+                        .onChanged { angle in
+                            let fullRotation = CGFloat.pi * 2 // 360 degrees in radians
+                            if angle.radians >= fullRotation {
+                                // Full rotation completed, update index to display next photo
+                                index = (index + 1) % state.photos.count
+                                
+                                // Reset the rotation angle of the circle
+                                dialAngle = .zero
+                            } else {
+                                // Update dialAngle to follow the rotation gesture
+                                dialAngle = angle
+                            }
+                        }
+                )
         }
     }
 }
