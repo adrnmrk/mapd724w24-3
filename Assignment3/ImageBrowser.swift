@@ -31,52 +31,60 @@ struct ImageBrowser: View {
     }
     
     var body: some View {
-        VStack {
-            Spacer()
-            if let photo = photo {
-                let authorName = photo.0.owner
-                ContentView(photo: photo.0, authorName: authorName) // Pass the photo object and owner to ContentView
-                    .id(photo.0.id) // Ensure ContentView updates when photo changes
-                    .scaleEffect(scale)
-                    .rotationEffect(rotationAngle + gestureRotation)
-                    .gesture(
-                        TapGesture(count: 2)
-                            .onEnded { _ in
-                                // Double tap recognized, reset scale to 1
-                                scale = 1
-                            }
-                            .exclusively(before:
-                                TapGesture(count: 1)
+        ZStack {
+            VStack {
+                Spacer()
+                if let photo = photo {
+                    let authorName = photo.0.owner
+                    ContentView(photo: photo.0, authorName: authorName) // Pass the photo object and owner to ContentView
+                        .id(photo.0.id) // Ensure ContentView updates when photo changes
+                        .scaleEffect(scale)
+                        .rotationEffect(rotationAngle + gestureRotation)
+                        .gesture(
+                            TapGesture(count: 2)
+                                .onEnded { _ in
+                                    // Double tap recognized, reset scale to 1
+                                    scale = 1
+                                }
+                                .exclusively(before:
+                                                TapGesture(count: 1)
                                     .onEnded { _ in
                                         // Single tap recognized, zoom in
                                         scale *= 1.5
                                     }
-                            )
-                    )
-                    .gesture(
-                        DragGesture()
-                            .onEnded { gesture in
-                                let swipeThreshold: CGFloat = 100
-                                if gesture.translation.width > swipeThreshold {
-                                    // Swiped right, show the next image
-                                    index = (index + 1) % state.photos.count
-                                } else if gesture.translation.width < -swipeThreshold {
-                                    // Swiped left, show the previous image
-                                    index = index == 0 ? state.photos.count - 1 : index - 1
+                                            )
+                        )
+                    //swipe
+                        .gesture(
+                            DragGesture()
+                                .onEnded { gesture in
+                                    let swipeThreshold: CGFloat = 100
+                                    if gesture.translation.width > swipeThreshold {
+                                        // Swiped right, show the next image
+                                        index = (index + 1) % state.photos.count
+                                        
+                                        // Rotate the dial by a certain angle (e.g., 45 degrees)
+                                        dialAngle -= Angle(degrees: 60)
+                                    } else if gesture.translation.width < -swipeThreshold {
+                                        // Swiped left, show the previous image
+                                        index = index == 0 ? state.photos.count - 1 : index - 1
+                                        
+                                        // Rotate the dial by a certain angle (e.g., -45 degrees)
+                                        dialAngle += Angle(degrees: 60)
+                                    }
                                 }
-                            }
-                    )
-                    .gesture(
-                        RotationGesture()
-                            .onChanged { angle in
-                                rotationAngle = angle
-                            })
-            } else {
-                Text("No photo available")
+                        )
+                    
+                        .gesture(
+                            RotationGesture()
+                                .onChanged { angle in
+                                    rotationAngle = angle
+                                })
+                } else {
+                    Text("No photo available")
+                }
+                Spacer()
             }
-            Spacer()
-        }
-        .overlay(alignment: .bottomLeading) {
             Circle()
                 .foregroundStyle(.pink)
                 .frame(width: dialRadius*2, height: dialRadius*2)
@@ -88,22 +96,31 @@ struct ImageBrowser: View {
                 .rotationEffect(dialAngle)
                 .opacity(state.photos.count > 1 ? 1 : 0) // hide if <1 photo
                 .padding()
+                .position(x: dialRadius + 20, y: UIScreen.main.bounds.height - dialRadius - 100)
                 .gesture(
-                    RotationGesture()
-                        .onChanged { angle in
-                            let fullRotation = CGFloat.pi * 2 // 360 degrees in radians
-                            if angle.radians >= fullRotation {
-                                // Full rotation completed, update index to display next photo
+                    DragGesture()
+                        .onEnded { value in
+                            let startAngle = atan2(value.startLocation.y - dialRadius, value.startLocation.x - dialRadius)
+                            let endAngle = atan2(value.location.y - dialRadius, value.location.x - dialRadius)
+                            let diffAngle = endAngle - startAngle
+                            
+                            if diffAngle > 0 {
+                                // Dragged clockwise, show the next image
                                 index = (index + 1) % state.photos.count
                                 
-                                // Reset the rotation angle of the circle
-                                dialAngle = .zero
-                            } else {
-                                // Update dialAngle to follow the rotation gesture
-                                dialAngle = angle
+                                // Rotate the dial by a certain angle (e.g., 60 degrees)
+                                dialAngle += Angle(degrees: 60)
+                            } else if diffAngle < 0 {
+                                // Dragged counterclockwise, show the previous image
+                                index = index == 0 ? state.photos.count - 1 : index - 1
+                                
+                                // Rotate the dial by a certain angle (e.g., -60 degrees)
+                                dialAngle -= Angle(degrees: 60)
                             }
                         }
                 )
+
+            
         }
     }
 }
